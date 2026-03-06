@@ -57,3 +57,16 @@ def binary_tournament(population,fitness):
             parents.append(population[idx2])
     return parents
 
+def roulette_wheel(population,fitnesses):
+    fitness_shift=fitnesses.copy()
+    min_val=min(fitness_shift)
+    if min_val<=0:
+        fitness_shift=[i-min_val for i in fitness_shift]
+    total_fitness=sum(fitness_shift)
+    if total_fitness==0:
+        probabilities=[1/len(population)]*len(probabilities)
+    else:
+        probabilities=[i/total_fitness for i in fitness_shift]
+    idx1,idx2=np.random.choice(len(population),2,p=probabilities)
+    parents=[population[idx1],population[idx2]]
+    return parents
