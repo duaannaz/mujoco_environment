@@ -115,3 +115,15 @@ def insert_mutation(chromosome):
     val=mutated.pop(idx2)
     mutated.insert(idx1+1,val)
     return mutated
+
+def gaussian_mutation(chromosome,mutation_rate=0.1):
+    mutated=[kf.copy() for kf in chromosome]
+    for kf in mutated:
+        for i in range(6):
+            if np.random.random() < mutation_rate:
+                kfi+=np.random.normal(0,0.1)
+                kf[i]=np.clip(kf[i],-1.0,1,0) #keep within bounds
+        # mutate duration occasionally
+        if np.random.random() < mutation_rate:
+            kf[-1]=max(1,int(kf[-1] + np.random.randint(-5,5)))
+    return mutated
