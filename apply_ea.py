@@ -78,3 +78,24 @@ def truncation(population,fitnesses):
     idx1,idx2=np.random.choice(top_indices,2,replace=False)
     parents=[population[idx1],population[idx2]]
     return parents
+
+def single_point_crossover(parent1,parent2):
+    noOfKeyframes=len(parent1)
+    index=np.random.randint(1,noOfKeyframes)
+    p1=[kf.copy() for kf in parent1[:index]]
+    p1=p1 + [kf.copy() for kf in parent2[index:]]
+    p2=[kf.copy() for kf in parent2[:index]]
+    p2=p2 + [kf.copy() for kf in parent1[index:]]
+    return (p1,p2)
+
+def ox_crossover(parent1,parent2):
+    noOfKeyframes=len(parent1)
+    i,j=sorted(np.random.choice(noOfKeyframes,2,replace=False))
+
+    child1=[kf.copy() for kf in parent2]
+    child1[i:j]=[kf.copy() for kf in parent1[i:j]]
+
+    child2=[kf.copy() for kf in parent1]
+    child2[i:j]=[kf.copy() for kf in parent2[i:j]]
+
+    return child1,child2
