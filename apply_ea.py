@@ -64,9 +64,17 @@ def roulette_wheel(population,fitnesses):
         fitness_shift=[i-min_val for i in fitness_shift]
     total_fitness=sum(fitness_shift)
     if total_fitness==0:
-        probabilities=[1/len(population)]*len(probabilities)
+        probabilities=[1/len(population)]*len(population)
     else:
         probabilities=[i/total_fitness for i in fitness_shift]
     idx1,idx2=np.random.choice(len(population),2,p=probabilities)
+    parents=[population[idx1],population[idx2]]
+    return parents
+
+def truncation(population,fitnesses):
+    indices=np.argsort(fitnesses)[::-1]
+    cutoff=len(population)//2
+    top_indices=indices[:cutoff]
+    idx1,idx2=np.random.choice(top_indices,2,replace=False)
     parents=[population[idx1],population[idx2]]
     return parents
