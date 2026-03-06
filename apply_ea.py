@@ -99,3 +99,19 @@ def ox_crossover(parent1,parent2):
     child2[i:j]=[kf.copy() for kf in parent2[i:j]]
 
     return child1,child2
+
+def swap_mutation(chromosome):
+    k=len(chromosome)
+    idx1,idx2=np.random.choice(k,2,replace=False)
+    mutated=[kf.copy() for kf in chromosome]
+    mutated[idx1],mutated[idx2]=mutated[idx2],mutated[idx1]
+
+    return mutated
+
+def insert_mutation(chromosome):
+    k=len(chromosome)
+    idx1,idx2=np.random.choice(k,2,replace=False)
+    mutated=[kf.copy() for kf in chromosome]
+    val=mutated.pop(idx2)
+    mutated.insert(idx1+1,val)
+    return mutated
