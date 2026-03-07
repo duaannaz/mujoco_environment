@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
+import matplotlib.pyplot as plt
 
-env = gym.make("HalfCheetah-v5", render_mode="human")
 
 def initialize_population(p_size,k):
     population = []
@@ -121,9 +121,114 @@ def gaussian_mutation(chromosome,mutation_rate=0.1):
     for kf in mutated:
         for i in range(6):
             if np.random.random() < mutation_rate:
-                kfi+=np.random.normal(0,0.1)
-                kf[i]=np.clip(kf[i],-1.0,1,0) #keep within bounds
+                kf[i]+=np.random.normal(0,0.1)
+                kf[i]=np.clip(kf[i],-1.0,1.0) #keep within bounds
         # mutate duration occasionally
         if np.random.random() < mutation_rate:
             kf[-1]=max(1,int(kf[-1] + np.random.randint(-5,5)))
     return mutated
+
+def survival_selection(population,children,fitnesses,children_fitnesses):
+    combined = population+children
+    combined_fitnesses=fitnesses+children_fitnesses
+    sorted_indices=np.argsort(combined_fitnesses)[::-1]
+    new_populaton=[combined[i] for i in sorted_indices[:len(population)]]
+    new_fitnesses=[combined_fitnesses[i] for i in sorted_indices[:len(population)]]
+    return new_populaton,new_fitnesses
+
+def run_ea(generations,p_size,K,selection,crossover,mutation,env):
+    population=initialize_population(p_size,K)
+    best_rewards=[]
+    fitnesses=[evaluate_fitness(c,env) for c in population]
+
+    for gen in range(generations):
+        best_rewards.append(max(fitnesses))
+        best_idx=np.argmax(fitnesses)
+        best_chromosome=population[best_idx]
+        children=[]
+        for i in range(p_size//2):
+            parents=selection(population,fitnesses)
+            child1,child2=crossover(parents[0],parents[1])
+            child1,child2=mutation(child1),mutation(child2)
+            children.append(child1)
+            children.append(child2)
+        
+        children_fitnesses=[evaluate_fitness(c,env) for c in children]
+        population,fitnesses=survival_selection(population,children,fitnesses,children_fitnesses)
+    return best_chromosome,best_rewards
+
+def save_keyframes(chromosome, filename="best_keyframes.txt"):
+    with open(filename, "w") as f:
+        f.write(f"{len(chromosome)}\n")
+        for kf in chromosome:
+            line = ", ".join(f"{v:.2f}" for v in kf)
+            f.write(line + "\n")
+    print(f"Saved best keyframes to {filename}")
+
+def plot_all_convergence(results):
+    for title, rewards in results.items():
+        plt.plot(rewards, label=title)
+    plt.xlabel("Generation")
+    plt.ylabel("Best Reward")
+    plt.title("Comparison of Selection Methods")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+if __name__ == "__main__":
+    env=gym.make("HalfCheetah-v5")
+    K=8
+    p_size=15
+    generations=25
+
+    results={}
+    best_overall = None
+    best_overall_reward=float('-inf')
+
+    
+    # Combination 1: Binary Tournament + Single Point + Gaussian
+    print("Running Combination 1...")
+    best, rewards = run_ea(generations, p_size, K, binary_tournament, single_point_crossover, gaussian_mutation, env)
+    results["Binary Tournament + Single Point"] = rewards
+    if max(rewards) > best_overall_reward:
+        best_overall_reward = max(rewards)
+        best_overall = best
+
+    # Combination 2: Roulette Wheel + OX + Gaussian
+    print("Running Combination 2...")
+    best, rewards = run_ea(generations, p_size, K, roulette_wheel, ox_crossover, gaussian_mutation, env)
+    results["Roulette Wheel + OX"] = rewards
+    if max(rewards) > best_overall_reward:
+        best_overall_reward = max(rewards)
+        best_overall = best
+
+    # Combination 3: Truncation + Single Point + Gaussian
+    print("Running Combination 3...")
+    best, rewards = run_ea(generations, p_size, K, truncation, single_point_crossover, gaussian_mutation, env)
+    results["Truncation + Single Point"] = rewards
+    if max(rewards) > best_overall_reward:
+        best_overall_reward = max(rewards)
+        best_overall = best
+
+    # Combination 4: Binary Tournament + OX + Insert Mutation
+    print("Running Combination 4...")
+    best, rewards = run_ea(generations, p_size, K, binary_tournament, ox_crossover, insert_mutation, env)
+    results["Binary Tournament + OX + Insert"] = rewards
+    if max(rewards) > best_overall_reward:
+        best_overall_reward = max(rewards)
+        best_overall = best
+
+    # Plot all combinations
+    plot_all_convergence(results)
+
+    # Save best keyframes
+    save_keyframes(best_overall, "best_keyframes.txt")
+    print(f"Best overall reward: {best_overall_reward}")
+
+    # Visualize best chromosome with rendering
+    print("Visualizing best solution...")
+    env_render = gym.make("HalfCheetah-v5", render_mode="human")
+    final_reward = evaluate_fitness(best_overall, env_render)
+    print(f"Final reward: {final_reward}")
+    env.close()
+env.close()
